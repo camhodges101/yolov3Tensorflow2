@@ -7,8 +7,6 @@ from tensorflow.keras import Model
 from tensorflow.keras.utils import plot_model
 import numpy as np
 
-
-
 def yolonet(InputPlaceholder):
   def upscale(input_tensor):
     inputShape=tf.shape(input_tensor)
@@ -30,12 +28,9 @@ def yolonet(InputPlaceholder):
         self.pads=1
       else:
         self.pads=0   
-      #self.layername=(self.conv2a.name).split("/")[0]
-      #print(self.layername)
-      #try:
-      self.bn2a = tf.keras.layers.BatchNormalization(momentum=0.9,epsilon=1e-5)#(name=self.layername)
-      #except:
-      #  self.bn2a = tf.keras.layers.BatchNormalization(name=self.layername+"_2")
+
+      self.bn2a = tf.keras.layers.BatchNormalization(momentum=0.9,epsilon=1e-5)
+
       self.activation=LeakyReLU(alpha=0.1)
       
     def call(self, input_tensor):
@@ -64,7 +59,7 @@ def yolonet(InputPlaceholder):
       x=x+input_tensor
       return x
 
-  ##model=(Conv_layer(32,kernel_size=(3,3),batchnorm=False).call(x))
+  
   class residuallayer(tf.keras.Model):
     def __init__(self,nb_filters,kernels, nb_blocks):
       super(residuallayer, self).__init__(name='')
@@ -154,12 +149,12 @@ def yolonet(InputPlaceholder):
       bbsBranch=Conv_layer(255,(1,1),batchnorm=False).call(bbsBranch)
       return bblBranch,bbmBranch,bbsBranch
   
-  #route1, route2, route3 = darknet53().call(InputPlaceholder)
+
   route1, route2, route3 = darknet53function(InputPlaceholder)
 
   bblBranch,bbmBranch,bbsBranch = networkhead().call(route1,route2,route3)
   return bblBranch,bbmBranch,bbsBranch
- # print(bbsBranch.shape)
+ 
 
 def finaldetectionlayer(bblBranch,bbmBranch,bbsBranch):
   def detectionlayer(Branch):
@@ -168,7 +163,7 @@ def finaldetectionlayer(bblBranch,bbmBranch,bbsBranch):
     GRID_W, GRID_H = Branch.shape[1],Branch.shape[1]
     cellsize=float(int(608/GRID_W))
     inputTensor=tf.reshape(Branch,[-1,GRID_W,GRID_H,3,5+numclasses])
-    #print(inputTensor)
+    
     anchors = np.array([[10,13],  [16,30],  [33,23],  [30,61],  [62,45],  [59,119],  [116,90],  [156,198],  [373,326]])
     anchRef=(GRID_H==19)*6+(GRID_H==38)*3+(GRID_H==76)*0
 
@@ -177,23 +172,18 @@ def finaldetectionlayer(bblBranch,bbmBranch,bbsBranch):
     cell_x = tf.dtypes.cast(tf.reshape(tf.tile(tf.range(GRID_W), [GRID_H]), (1, GRID_H, GRID_W, 1, 1)),tf.float32)
     cell_y = tf.transpose(cell_x, (0,2,1,3,4))
 
-
     gridRef=tf.tile(tf.concat((cell_x,cell_y),axis=-1),[1,1,1,3,1])
-
-    
+  
     xy=(tf.sigmoid(inputTensor[...,0:2])+gridRef)*cellsize
 
     wh=tf.exp(inputTensor[...,2:4])*anchors
-    #wh=anchors
     conf=tf.sigmoid(inputTensor[...,4:5])
-    #conf=inputTensor[...,4:5]
     classProd=tf.sigmoid(inputTensor[...,5:])
     return tf.concat((xy,wh,conf,classProd),axis=-1)
+
   bblBranch=tf.reshape(detectionlayer(bblBranch),[-1,bblBranch.shape[1]*bblBranch.shape[2]*3,85])
   bbmBranch=tf.reshape(detectionlayer(bbmBranch),[-1,bbmBranch.shape[1]*bbmBranch.shape[2]*3,85])
   bbsBranch=tf.reshape(detectionlayer(bbsBranch),[-1,bbsBranch.shape[1]*bbsBranch.shape[2]*3,85])
   
-  
-
   return tf.concat((bblBranch,bbmBranch,bbsBranch),axis=1)
 
