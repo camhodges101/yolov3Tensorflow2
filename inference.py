@@ -84,3 +84,21 @@ if True:
       modelload[str(i)][4].assign(moving_variance)
 
       
+import matplotlib.pyplot as plt
+import time
+try:
+  img=np.array(Image.open("person.jpg").resize((608,608)))
+  
+except:
+  ! wget https://raw.githubusercontent.com/pjreddie/darknet/master/data/person.jpg
+  img=np.array(Image.open("person.jpg").resize((608,608)))
+
+out = np.array(Image.open('drive/My Drive/Colab Notebooks/yolov3/person.jpg').resize((608,608)))
+
+
+ti=time.time()
+detections=mymodel.predict(np.expand_dims(out,0).astype("float32"))
+results=np.array(nms(detections))
+
+showboxes(results[:,0],results[:,1],results[:,2],out)
+print(time.time()-ti)
