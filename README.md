@@ -1,6 +1,6 @@
 # yolov3
 
-This is not my original model, I've taken the Yolov3 model found  here (https://pjreddie.com/darknet/yolo/) and reimplimented the original authors model (including weights) to the Tensorflow 2.0 model. Theres plenty of examples of this on Github. 
+This is not my original model, I've taken the Yolov3 model found  here (https://pjreddie.com/darknet/yolo/) and reimplimented it (including weights) to the Tensorflow 2.0 model. Theres plenty of examples similar of this on Github. 
 
 The purpose of this was to learn more about how the Yolo models work, get familar with the changes from TF 1.0 to TF 2.0 and create a baseline model for some transfer learning projects I'm working on.
 
