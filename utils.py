@@ -25,8 +25,13 @@ from model import yolonet, finaldetectionlayer
 
 
 def calc_iou_batch(pred_boxes, gt_box):
+    '''
+    This function takes a single ground truth or comparison box and compares to a list of predicted boxes. 
+    
+    In the case of inference the GT box is the predicted box with the highest confidence. 
+    '''
     results=[]
-
+    #switch input from xywh, to xmin,ymin, xmax,ymax
     gtx,gty,gtw,gth = gt_box
     x1_t, y1_t, x2_t, y2_t = gtx-0.5*gtw,gty-0.5*gth,gtx+0.5*gtw,gty+0.5*gth
     for box in pred_boxes:
@@ -60,7 +65,15 @@ def calc_iou_batch(pred_boxes, gt_box):
 
 
 def nms(detections,confthrs=0.5,iouthrs=0.4):  
+  '''
+  This is a simple class based non max suppression function, 
   
+  This step removes multiple duplicate bounding box predictions from the same object
+  
+  In future this could be replaced by the NMS function from the tensorflow library if it proves to be more efficient. 
+  
+  https://www.tensorflow.org/api_docs/python/tf/image/non_max_suppression
+  '''
   
   bbox=detections[0,:,0:4]
   conf=detections[0,:,4]
@@ -74,16 +87,12 @@ def nms(detections,confthrs=0.5,iouthrs=0.4):
   classconf=classconf[(-conf).argsort()]
   conf=conf[(-conf).argsort()]
   count=0
-  #for a,b,c in zip(conf,bbox,classconf):
-  #  print("{} {} {}".format(a,b,np.argmax(c)))
-  #  count+=1
-  #  if count >10:
-  #    break
+
   count=0
   results=[]
   uniqueclasses = list(set(np.argmax(classconf,axis=-1)))
   for class_ in uniqueclasses:
-    #print("Class: {}".format(class_))
+
     
     clsmask=np.nonzero(np.argmax(classconf,axis=1)==class_)
     
@@ -96,7 +105,7 @@ def nms(detections,confthrs=0.5,iouthrs=0.4):
       spdetection=classdetection[0]
 
       spbbox=classboxes[0]
-      #print(spbbox)
+
       spclass=np.argmax(classCls[0])
       results.append([spbbox,spdetection,spclass])
       
