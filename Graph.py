@@ -158,25 +158,36 @@ def yolonet(InputPlaceholder):
 
 def finaldetectionlayer(bblBranch,bbmBranch,bbsBranch):
   def detectionlayer(Branch):
-    numclasses=80
+    '''
+    This function takes raw layer outputs from the top of the CNN and applies final activation functions, reshapes to the expected grid format and applies absolute position offsets in pixels from the cell grid reference. 
+    
+    This function once on each of a the outputs of the entire detection network, each of these outputs represent different scale detections. 
+    --Inputs: 4D Tensor shape [batchSize, GRID_W, GRID_H, 3 * (5 + Number of classes)]
+    
+    --Actions:
+    
+    --Outputs: 2D tensor shape [batchSize, GRID_W, GRID_H, 3 * (5 + Number of classes)]
+    
+    '''
+    NUMCLASSES=80
 
     GRID_W, GRID_H = Branch.shape[1],Branch.shape[1]
-    cellsize=float(int(608/GRID_W))
-    inputTensor=tf.reshape(Branch,[-1,GRID_W,GRID_H,3,5+numclasses])
+    CELLSIZE=float(int(608/GRID_W))
+    inputTensor=tf.reshape(Branch,[-1,GRID_W,GRID_H,3,5+NUMCLASSES])
     
-    anchors = np.array([[10,13],  [16,30],  [33,23],  [30,61],  [62,45],  [59,119],  [116,90],  [156,198],  [373,326]])
+    ANCHORS = np.array([[10,13],  [16,30],  [33,23],  [30,61],  [62,45],  [59,119],  [116,90],  [156,198],  [373,326]])
     anchRef=(GRID_H==19)*6+(GRID_H==38)*3+(GRID_H==76)*0
 
-    anchors=anchors[anchRef:anchRef+3,:].reshape((1,1,1,3,2))
+    ANCHORS=ANCHORS[anchRef:anchRef+3,:].reshape((1,1,1,3,2))
 
     cell_x = tf.dtypes.cast(tf.reshape(tf.tile(tf.range(GRID_W), [GRID_H]), (1, GRID_H, GRID_W, 1, 1)),tf.float32)
     cell_y = tf.transpose(cell_x, (0,2,1,3,4))
 
     gridRef=tf.tile(tf.concat((cell_x,cell_y),axis=-1),[1,1,1,3,1])
   
-    xy=(tf.sigmoid(inputTensor[...,0:2])+gridRef)*cellsize
+    xy=(tf.sigmoid(inputTensor[...,0:2])+gridRef)*CELLSIZE
 
-    wh=tf.exp(inputTensor[...,2:4])*anchors
+    wh=tf.exp(inputTensor[...,2:4])*ANCHORS
     conf=tf.sigmoid(inputTensor[...,4:5])
     classProd=tf.sigmoid(inputTensor[...,5:])
     return tf.concat((xy,wh,conf,classProd),axis=-1)
